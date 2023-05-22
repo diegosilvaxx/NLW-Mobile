@@ -33,52 +33,66 @@ export default function NewMemory() {
         quality: 1,
       })
 
+      console.log(result.assets[0].uri)
+
       if (result.assets[0]) {
         setPreview(result.assets[0].uri)
       }
     } catch (err) {
+      console.log('lele', err)
       // deu erro mas eu não tratei
     }
   }
 
   async function handleCreateMemory() {
-    const token = await SecureStore.getItemAsync('token')
+    try {
+      console.log('chehehe')
+      const token = await SecureStore.getItemAsync('token')
+      console.log('token', token)
 
-    let coverUrl = ''
+      let coverUrl = ''
 
-    if (preview) {
-      const uploadFormData = new FormData()
+      if (preview) {
+        const uploadFormData = new FormData()
 
-      uploadFormData.append('file', {
-        uri: preview,
-        name: 'image.jpg',
-        type: 'image/jpg',
-      } as any)
+        uploadFormData.append('file', {
+          uri: preview,
+          name: 'image.jpg',
+          type: 'image/jpg',
+        } as any)
 
-      const uploadResponse = await api.post('/upload', uploadFormData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
+        console.log('uploadFormData', uploadFormData)
+
+        const uploadResponse = await api.post('/upload', uploadFormData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        })
+
+        console.log('bobo', uploadResponse)
+
+        coverUrl = uploadResponse.data.fileUrl
+      }
+
+      console.log('chegou aqui', content, isPublic, coverUrl)
+      await api.post(
+        '/memories',
+        {
+          content,
+          isPublic,
+          coverUrl,
         },
-      })
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      )
 
-      coverUrl = uploadResponse.data.fileUrl
+      router.push('/memories')
+    } catch (error) {
+      console.log('error', error)
     }
-
-    await api.post(
-      '/memories',
-      {
-        content,
-        isPublic,
-        coverUrl,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
-    )
-
-    router.push('/memories')
   }
 
   return (
@@ -118,6 +132,7 @@ export default function NewMemory() {
             <Image
               source={{ uri: preview }}
               className="h-full w-full rounded-lg object-cover"
+              alt=""
             />
           ) : (
             <View className="flex-row items-center gap-2">
@@ -141,7 +156,7 @@ export default function NewMemory() {
 
         <TouchableOpacity
           activeOpacity={0.7}
-          onPress={handleCreateMemory}
+          onPress={() => handleCreateMemory()}
           className="items-center self-end rounded-full bg-green-500 px-5 py-2"
         >
           <Text className="font-alt text-sm uppercase text-black">Salvar</Text>
