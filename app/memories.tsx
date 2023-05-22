@@ -18,6 +18,7 @@ interface Memory {
   excerpt: string
   createdAt: string
   id: string
+  isPublic: boolean
 }
 
 export default function NewMemory() {
@@ -45,7 +46,6 @@ export default function NewMemory() {
   useFocusEffect(
     useCallback(() => {
       loadMemories()
-      console.log('loaded')
     }, []),
   )
 
@@ -94,7 +94,12 @@ export default function NewMemory() {
                 <Text className="font-body text-base leading-relaxed text-gray-100">
                   {memory.excerpt}
                 </Text>
-                <Link href="/memories/id" asChild>
+                <Link
+                  href={`/edit?payload=${encodeURIComponent(
+                    JSON.stringify(memory),
+                  )}`}
+                  asChild
+                >
                   <TouchableOpacity className="flex-row items-center gap-2">
                     <Text className="font-body text-sm text-gray-200">
                       Ler mais

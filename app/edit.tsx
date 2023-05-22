@@ -10,14 +10,24 @@ import {
 import Icon from '@expo/vector-icons/Feather'
 
 import NLWLogo from '../src/assets/nlw-spacetime-logo.svg'
-import { Link, useRouter } from 'expo-router'
+import { Link, useRouter, useLocalSearchParams } from 'expo-router'
+
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import * as ImagePicker from 'expo-image-picker'
 import * as SecureStore from 'expo-secure-store'
 import { api } from '../src/lib/api'
 
 export default function NewMemory() {
+  const { payload } = useLocalSearchParams()
+
+  const {
+    id,
+    coverUrl,
+    excerpt,
+    isPublic: isPublicParam,
+  } = JSON.parse(decodeURIComponent(payload.toString()))
+
   const { bottom, top } = useSafeAreaInsets()
   const router = useRouter()
 
@@ -26,6 +36,12 @@ export default function NewMemory() {
   const [content, setContent] = useState('')
   const [isPublic, setIsPublic] = useState(false)
 
+  useEffect(() => {
+    setContent(excerpt.toString())
+    setPreview(coverUrl.toString().replace('*', '/'))
+    setIsPublic(Boolean(isPublicParam))
+  }, [excerpt, coverUrl, isPublicParam])
+
   async function openImagePicker() {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -33,18 +49,15 @@ export default function NewMemory() {
         quality: 1,
       })
 
-      console.log(result.assets[0].uri)
-
       if (result.assets[0]) {
         setPreview(result.assets[0].uri)
       }
     } catch (err) {
-      console.log('Error openImagePicker', err)
-      // deu erro mas eu não tratei
+      console.log('error openImagePicker', err)
     }
   }
 
-  async function handleCreateMemory() {
+  async function handleEditMemory() {
     try {
       const token = await SecureStore.getItemAsync('token')
 
@@ -68,8 +81,8 @@ export default function NewMemory() {
         coverUrl = uploadResponse.data.fileUrl
       }
 
-      await api.post(
-        '/memories',
+      await api.put(
+        `/memories/${id}`,
         {
           content,
           isPublic,
@@ -84,7 +97,7 @@ export default function NewMemory() {
 
       router.push('/memories')
     } catch (error) {
-      console.log('Error handleCreateMemory', error)
+      console.log('Error handleEditMemory', error)
     }
   }
 
@@ -149,7 +162,7 @@ export default function NewMemory() {
 
         <TouchableOpacity
           activeOpacity={0.7}
-          onPress={() => handleCreateMemory()}
+          onPress={() => handleEditMemory()}
           className="items-center self-end rounded-full bg-green-500 px-5 py-2"
         >
           <Text className="font-alt text-sm uppercase text-black">Salvar</Text>
